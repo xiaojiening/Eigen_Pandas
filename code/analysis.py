@@ -1,71 +1,72 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
 
-plt.rcParams['figure.figsize'] = (16, 10)  # 设置更大的图形尺寸
-plt.rcParams['font.size'] = 12  # 增大字体大小
-plt.rcParams['lines.linewidth'] = 2  # 增加线条宽度
+def draw2d(input_file, output_file, title):
+    plt.rcParams['figure.figsize'] = (16, 10)  # 设置更大的图形尺寸
+    plt.rcParams['font.size'] = 12  # 增大字体大小
+    plt.rcParams['lines.linewidth'] = 2  # 增加线条宽度
 
-##################################################### Pandas #####################################################
+    df = pd.read_csv(input_file)
 
-df_pandas = pd.read_csv('../result/pandas_analysis.csv')
+    fig, ax = plt.subplots()
 
-fig, ax = plt.subplots()
+    for stock in df['stocks'].unique():
+        subset = df[df['stocks'] == stock]
+        ax.plot(subset['years'], subset['time'], marker='o', markersize=8, label=f'Stocks {stock}')
 
-for stock in df_pandas['stocks'].unique():
-    subset = df_pandas[df_pandas['stocks'] == stock]
-    ax.plot(subset['years'], subset['time'], marker='o', markersize=8, label=f'Stocks {stock}')
+    ax.set_title(f'{title} : Time vs. Years for different Stock Quantity', fontsize=20)
+    ax.set_xlabel('Years', fontsize=16)
+    ax.set_ylabel('Time', fontsize=16)
+    ax.legend(fontsize=12)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.grid(True, linestyle='--', alpha=0.7)
 
-ax.set_title('Pandas : Time vs. Years for different Stock Quantity', fontsize=20)
-ax.set_xlabel('Years', fontsize=16)
-ax.set_ylabel('Time', fontsize=16)
-ax.legend(fontsize=12)
-ax.tick_params(axis='both', which='major', labelsize=12)
-ax.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(output_file, format='png', dpi=300, bbox_inches='tight')
 
-plt.tight_layout()
-plt.savefig('../result/pandas_plot.png', format='png', dpi=300, bbox_inches='tight')
+def draw3d(input_file, output_file, title):
+    df = pd.read_csv(input_file)
 
-##################################################### Eigen #####################################################
+    # 提取特征和目标变量
+    X = df[['stocks', 'years']].values
+    y = df['time'].values
 
-df_eigen = pd.read_csv('../result/eigen_analysis.csv')
+    # 使用多项式特征
+    poly = PolynomialFeatures(degree=2)  # 可以调整degree的值来增加或减少多项式的复杂度
+    X_poly = poly.fit_transform(X)
 
-fig, ax = plt.subplots()
+    # 拟合回归模型
+    model = LinearRegression()
+    model.fit(X_poly, y)
 
-for stock in df_eigen['stocks'].unique():
-    subset = df_eigen[df_eigen['stocks'] == stock]
-    ax.plot(subset['years'], subset['time'], marker='o', markersize=8, label=f'Stocks {stock}')
+    # 生成预测数据
+    stocks_range = np.linspace(df['stocks'].min(), df['stocks'].max(), 100)
+    years_range = np.linspace(df['years'].min(), df['years'].max(), 5) 
+    stocks_grid, years_grid = np.meshgrid(stocks_range, years_range)
+    X_pred = np.vstack([stocks_grid.ravel(), years_grid.ravel()]).T
+    X_pred_poly = poly.transform(X_pred)
+    time_pred = model.predict(X_pred_poly)
+    time_pred_grid = time_pred.reshape(stocks_grid.shape)
 
-ax.set_title('Eigen : Time vs. Years for different Stock Quantity', fontsize=20)
-ax.set_xlabel('Years', fontsize=16)
-ax.set_ylabel('Time', fontsize=16)
-ax.legend(fontsize=12)
-ax.tick_params(axis='both', which='major', labelsize=12)
-ax.grid(True, linestyle='--', alpha=0.7)
+    # 绘制结果
+    plt.figure(figsize=(14, 6))
 
-plt.tight_layout()
-plt.savefig('../result/eigen_plot.png', format='png', dpi=300, bbox_inches='tight')
+    # 3D折线图
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(stocks_grid, years_grid, time_pred_grid, cmap='viridis', edgecolor='none')
+    ax.set_xlabel('Stocks')
+    ax.set_ylabel('Years')
+    ax.set_zlabel('Time')
+    ax.set_title(f'{title}: Plot of Time vs Stocks and Years')
 
-##################################################### Pandas Vs Eigen #####################################################
+    plt.savefig(output_file, format='png', dpi=300, bbox_inches='tight')
 
-df_pandas['Source'] = 'Pandas'
-df_eigen['Source'] = 'Eigen'
-df_combined = pd.concat([df_pandas, df_eigen])
-markers = {'Pandas': 'o', 'Eigen': 's'}  # 圆圈和方块
 
-fig, ax = plt.subplots()
-
-for stock in df_combined['stocks'].unique():
-    subset = df_combined[df_combined['stocks'] == stock]
-    for source in subset['Source'].unique():
-        source_subset = subset[subset['Source'] == source]
-        ax.plot(source_subset['years'], source_subset['time'], marker=markers[source], markersize=8, label=f'{source} Stock {stock}')
-
-ax.set_title('Pandas vs. Eigen : Time vs. Years for different Stock Quantity', fontsize=20)
-ax.set_xlabel('Years', fontsize=16)
-ax.set_ylabel('Time', fontsize=16)
-ax.legend(fontsize=12, bbox_to_anchor=(1.05, 1), loc='upper left')
-ax.tick_params(axis='both', which='major', labelsize=12)
-ax.grid(True, linestyle='--', alpha=0.7)
-
-plt.tight_layout()
-plt.savefig('../result/pandas_vs_eigen_plot.png', format='png', dpi=300, bbox_inches='tight')
+if __name__ == '__main__':
+    draw3d('../result/eigen_analysis.csv', '../result/eigen_3d.png', 'Eigen')
+    draw3d('../result/pandas_analysis.csv', '../result/pandas_3d.png', 'Pandas')
+    draw2d('../result/eigen_analysis.csv', '../result/eigen_2d.png', 'Eigen')
+    draw2d('../result/pandas_analysis.csv', '../result/pandas_2d.png', 'Pandas')

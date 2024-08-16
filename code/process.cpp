@@ -113,7 +113,7 @@ vector<string> getColumnAsVectorString(const vector<vector<string>>& data, const
 
 // 计算加权收益
 std::unordered_map<std::string, long double> calculateWeightedProfit(const Vec& profit, const Vec& weight, const std::vector<std::string>& date) {
-    auto weighted_profit = profit * weight;
+    // auto weighted_profit = profit * weight;
     // auto weighted_profit = profit.cwiseProduct(weight);
     
     // 使用 unordered_map 按日期分组并计算加权利润总和
@@ -121,7 +121,8 @@ std::unordered_map<std::string, long double> calculateWeightedProfit(const Vec& 
     date_to_weighted_profit.reserve(date.size());  
 
     for (int i = 0; i < date.size(); ++i) {
-        date_to_weighted_profit[date[i]] += weighted_profit(i);
+        // date_to_weighted_profit[date[i]] += weighted_profit(i);
+        date_to_weighted_profit[date[i]] += profit(i) * weight(i);
     }
 
     return date_to_weighted_profit;

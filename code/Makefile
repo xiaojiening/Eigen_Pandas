@@ -1,7 +1,7 @@
 # Define environment and compiler settings
 PYTHON = /disk2/home/xiaojiening/miniconda3/envs/py3.12.0/bin/python
 CPP_COMPILER = g++
-CPP_FLAGS = -std=c++11
+CPP_FLAGS = -std=c++11 -O3 -march=native -fopenmp
 CPP_SOURCE = process.cpp
 CPP_EXE = process
 DATA_DIR = ../data
